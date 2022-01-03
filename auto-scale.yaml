@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  veloLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties: 
+      LaunchTemplateName: !Sub ${AWS::StackName}-launch-template
+      LaunchTemplateData: 
+        BlockDeviceMappings: 
+          - Ebs:
+              VolumeSize: 22
+              VolumeType: gp3
+              DeleteOnTermination: true
+              Encrypted: true
+            DeviceName: /dev/xvdcz
+        ImageId: ami-08bdb28f88b476bf8 
+        InstanceType: t2.micro
+        KeyName: sss
+        Monitoring: 
+          Enabled: true
+        SecurityGroupIds: 
+          -  sg-0b8215dcaf08a81d4
+  veloASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AvailabilityZones:
+      - ap-south-1a
+      AutoScalingGroupName: veloASG
+      MinSize: "2"
+      MaxSize: "4"
+      DesiredCapacity: "2"
+      HealthCheckGracePeriod: 300
+      LaunchTemplate:
+        LaunchTemplateId: !Ref veloLaunchTemplate
+        Version: !GetAtt veloLaunchTemplate.LatestVersionNumber
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MaxBatchSize: '2'
+        MinInstancesInService: '2'
+        PauseTime: PT10M
+        WaitOnResourceSignals: true
+      VPCZoneIdentifier:
+        - subnet-0a6d637435d294d13
